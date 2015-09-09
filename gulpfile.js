@@ -10,7 +10,6 @@ var gulp  = require('gulp'),
     less       = require('gulp-less'),
     autoprefixer = require('gulp-autoprefixer'),
     rename = require('gulp-rename'),
-
     input  = {
       'html': 'sources/*.html',
       'sass': 'sources/scss/**/*.scss',
@@ -27,8 +26,8 @@ var gulp  = require('gulp'),
     tinylr; //task name of live-reload
 
 /* run the watch task when gulp is called without arguments */
-gulp.task('default', ['express','livereload','watch'], function() {
-
+gulp.task('default', function() {
+    console.log('welcome');
 });
 
 /* run javascript through jshint */
@@ -46,7 +45,8 @@ gulp.task('build-scss', function() {
     .pipe(gutil.env.type === 'production' ? minifycss() : gutil.noop())
     .pipe(gutil.env.type === 'production' ? rename({suffix: '.min'}) : gutil.noop())
     .pipe(sourcemaps.write())
-    .pipe(gulp.dest(output.css)); // write min file
+    .pipe(gulp.dest(output.css))
+    .pipe(browserSync.stream());
 });
 
 /* compile less files */
@@ -57,7 +57,8 @@ gulp.task('build-less', function() {
     .pipe(gutil.env.type === 'production' ? minifycss() : gutil.noop())
     .pipe(gutil.env.type === 'production' ? rename({suffix: '.min'}) : gutil.noop())
     .pipe(sourcemaps.write())
-    .pipe(gulp.dest(output.css));
+    .pipe(gulp.dest(output.css))
+    .pipe(browserSync.stream());
   
 });
 
@@ -70,14 +71,10 @@ gulp.task('build-js', function() {
     .pipe(gutil.env.type === 'production' ? uglify() : gutil.noop()) 
     .pipe(gutil.env.type === 'production' ? rename({suffix: '.min'}) : gutil.noop()) 
     .pipe(sourcemaps.write())
-    .pipe(gulp.dest(output.js));
+    .pipe(gulp.dest(output.js))
+    .pipe(browserSync.stream());
 });
 
-/* live-reload */
-gulp.task('livereload', function() {
-  tinylr = require('tiny-lr')();
-  tinylr.listen(35729);
-});
 
 function notifyLiveReload(event) {
   var fileName = require('path').relative(__dirname, event.path);
@@ -89,20 +86,45 @@ function notifyLiveReload(event) {
   });
 }
 
+function watching(type)
+{
+  gulp.watch(input.js, ['jshint', 'build-js']);
+  gulp.watch(input.sass, ['build-scss']);
+  gulp.watch(input.less, ['build-less']);
+  switch(type) {
+    case 'express':
+        gulp.watch(output.html+'/*.html',notifyLiveReload)
+        gulp.watch(output.css+'/*.css',notifyLiveReload);
+        gulp.watch(output.js+'/*.js',notifyLiveReload);
+      break;
+    case 'browserSync':
+        gulp.watch(output.html+'/*.html').on('change', browserSync.reload);
+        gulp.watch(output.css+'/*.css').on('change', browserSync.reload);
+        gulp.watch(output.js+'/*.js').on('change', browserSync.reload);
+      break;
+
+  }
+}
+
+//Using Express
 gulp.task('express', function() {
+  tinylr = require('tiny-lr')();
+  tinylr.listen(35729);
+
   var express = require('express');
   var app = express();
   app.use(require('connect-livereload')({port: 35729}));
   app.use(express.static(output.html));
-  app.listen(4000, '0.0.0.0');
+  app.listen(3000, '0.0.0.0');
+  watching('express');
 });
 
-/* Watch these files for changes and run the task on update */
-gulp.task('watch', function() {
-  gulp.watch(input.js, ['jshint', 'build-js']);
-  gulp.watch(input.sass, ['build-scss']);
-  gulp.watch(input.less, ['build-less']);
-  gulp.watch(output.html+'/*.html',notifyLiveReload)
-  gulp.watch(output.css+'/*.css',notifyLiveReload);
-  gulp.watch(output.js+'/*.js',notifyLiveReload);
+//Using BrowerSync - dev with mobile
+gulp.task('serve', function() {
+  var browserSync = require('browser-sync').create();
+  browserSync.init({
+        server: output.html
+    });
+  watching('browserSync');
 });
+
