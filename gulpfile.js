@@ -23,6 +23,7 @@ var gulp  = require('gulp'),
       'css': 'public/assets/css',
       'js': 'public/assets/js'
     },
+    browserSync,
     tinylr; //task name of live-reload
 
 /* run the watch task when gulp is called without arguments */
@@ -46,7 +47,7 @@ gulp.task('build-scss', function() {
     .pipe(gutil.env.type === 'production' ? rename({suffix: '.min'}) : gutil.noop())
     .pipe(sourcemaps.write())
     .pipe(gulp.dest(output.css))
-    .pipe(browserSync.stream());
+    .pipe(browerSyncProcess());
 });
 
 /* compile less files */
@@ -58,7 +59,7 @@ gulp.task('build-less', function() {
     .pipe(gutil.env.type === 'production' ? rename({suffix: '.min'}) : gutil.noop())
     .pipe(sourcemaps.write())
     .pipe(gulp.dest(output.css))
-    .pipe(browserSync.stream());
+    .pipe(browerSyncProcess());
   
 });
 
@@ -72,9 +73,14 @@ gulp.task('build-js', function() {
     .pipe(gutil.env.type === 'production' ? rename({suffix: '.min'}) : gutil.noop()) 
     .pipe(sourcemaps.write())
     .pipe(gulp.dest(output.js))
-    .pipe(browserSync.stream());
+    .pipe(browerSyncProcess());
 });
 
+function browerSyncProcess()
+{
+  if(browserSync != undefined)
+    return browserSync.stream();
+}
 
 function notifyLiveReload(event) {
   var fileName = require('path').relative(__dirname, event.path);
@@ -121,7 +127,7 @@ gulp.task('express', function() {
 
 //Using BrowerSync - dev with mobile
 gulp.task('serve', function() {
-  var browserSync = require('browser-sync').create();
+  browserSync = require('browser-sync').create();
   browserSync.init({
         server: output.html
     });

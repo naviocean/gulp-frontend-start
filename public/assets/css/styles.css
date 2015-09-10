@@ -7,9 +7,7 @@ body {
     display: table; }
   body:after {
     clear: both; }
-h1 {
-  color: #000;
-}
+
 .wrap {
   width: 1140px;
   margin: 0 auto; }
